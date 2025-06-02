@@ -101,7 +101,10 @@ return {
           buffer = bufnr,
           callback = function()
             local lsp_format_modifications = require "lsp-format-modifications"
-            lsp_format_modifications.format_modifications(client, bufnr)
+            local result = lsp_format_modifications.format_modifications(client, bufnr)
+            if not result.success then -- fall back to full-document formatting
+              vim.lsp.buf.format { id = client.id, bufnr = bufnr }
+            end
           end,
         }
       )

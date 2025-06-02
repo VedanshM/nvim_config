@@ -6,10 +6,12 @@ opt.relativenumber = true
 opt.number = true
 
 -- tabs & indentation
-opt.tabstop = 2       -- 2 spaces for tabs (prettier default)
-opt.shiftwidth = 2    -- 2 spaces for indent width
-opt.expandtab = true  -- expand tab to spaces
+opt.tabstop = 4       -- A TAB character looks like 4 spaces
+opt.expandtab = true  -- Pressing the TAB key will insert spaces instead of a TAB character
+opt.softtabstop = 4   -- Number of spaces inserted instead of a TAB character
+opt.shiftwidth = 4    -- Number of spaces inserted when indenting
 opt.autoindent = true -- copy indent from current line when starting new one
+opt.smartindent = true
 
 opt.wrap = false
 
