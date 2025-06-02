@@ -37,3 +37,20 @@ opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 -- split windows
 opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
+--fold expressions using treesitter
+opt.foldmethod = "expr"
+opt.foldexpr = "nvim_treesitter#foldexpr()"
+
+-- local autocmd_utils = require("ved.utils.autocmds")
+-- autocmd_utils.nvim_create_augroups({
+--     open_folds = {
+--         {
+--             { "BufReadPost", "FileReadPost" },
+--             {
+--                 pattern = "*",
+--                 command = "normal! zR",
+--             }
+--         }
+--     }
+-- }
+-- )
