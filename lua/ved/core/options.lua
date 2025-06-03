@@ -40,17 +40,32 @@ opt.splitbelow = true -- split horizontal window to the bottom
 --fold expressions using treesitter
 opt.foldmethod = "expr"
 opt.foldexpr = "nvim_treesitter#foldexpr()"
+-- Set the initial fold level when opening a file
+opt.foldlevelstart = 99
+-- Set the current fold level for the current buffer
+opt.foldlevel = 99
+opt.foldenable = false
 
--- local autocmd_utils = require("ved.utils.autocmds")
--- autocmd_utils.nvim_create_augroups({
---     open_folds = {
---         {
---             { "BufReadPost", "FileReadPost" },
---             {
---                 pattern = "*",
---                 command = "normal! zR",
---             }
---         }
---     }
--- }
--- )
+local autocmd_utils = require("ved.utils.autocmds")
+autocmd_utils.nvim_create_augroups({
+    open_folds = {
+        {
+            "BufReadPost",
+            {
+                pattern = "*",
+                callback = function()
+                    vim.notify("Autocommand triggered: opening folds", vim.log.levels.INFO)
+                    vim.cmd("normal! zR")
+                end
+            }
+        }
+    }
+}
+)
+
+-- for ruff and pyright as suggested by gpt
+vim.diagnostic.config({
+    virtual_text = true,
+    signs = true,
+    severity_sort = true,
+})
