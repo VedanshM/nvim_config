@@ -1,19 +1,8 @@
 return {
+    -- used for having sane defaults while configuring LSPs
     "neovim/nvim-lspconfig",
-    version = "^v1.8.0",
     event = { "BufReadPre", "BufNewFile" },
-    dependencies = {
-        "hrsh7th/cmp-nvim-lsp",
-        { "antosha417/nvim-lsp-file-operations", config = true },
-        { "folke/neodev.nvim",                   opts = {} },
-        "joechrisellis/lsp-format-modifications.nvim",
-    },
     config = function()
-        local lspconfig = require("lspconfig")
-        local mason_lspconfig = require("mason-lspconfig")
-        local cmp_nvim_lsp = require("cmp_nvim_lsp")
-
-
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("UserLspConfig", {}),
             callback = function(ev)
@@ -68,36 +57,29 @@ return {
             end,
         })
         -- used to enable autocompletion (assign to every lsp server config)
-        local capabilities = cmp_nvim_lsp.default_capabilities()
-        capabilities.general = capabilities.general or {}
-        capabilities.general.positionEncodings = { "utf-16" } --  Force all clients to use UTF-8
-
-        -- Change the Diagnostic symbols in the sign column (gutter)
-        vim.diagnostic.config({
-            signs = {
-                text = {
-                    [vim.diagnostic.severity.ERROR] = ' ',
-                    [vim.diagnostic.severity.WARN] = ' ',
-                    [vim.diagnostic.severity.INFO] = '󰠠 ',
-                    [vim.diagnostic.severity.HINT] = ' ',
-                }
-            }
-        })
+        local lsp_format_modifications = require("lsp-format-modifications")
+        local custom_formatters = require("ved.config.formatters")
         local on_attach = function(client, bufnr)
+            local filetype = vim.bo[bufnr].filetype
+            -- Disable LSP formatting for filetypes with custom_formatters
+            if custom_formatters[filetype] then
+                client.server_capabilities.documentFormattingProvider = false
+                client.server_capabilities.documentRangeFormattingProvider = false
+            end
+            if filetype == "python" then
+                if client.name == "ruff" then
+                    client.server_capabilities.hoverProvider = false
+                    client.server_capabilities.definitionProvider = false
+                else
+                    client.server_capabilities.documentFormattingProvider = false
+                    client.server_capabilities.documentRangeFormattingProvider = false
+                    return
+                end
+            end
             local augroup_id = vim.api.nvim_create_augroup(
                 "FormatModificationsDocumentFormattingGroup",
                 { clear = false }
             )
-            local filetype = vim.bo[bufnr].filetype
-            -- Disable LSP formatting for Python
-            if filetype == "python" then
-                client.server_capabilities.documentFormattingProvider = false
-            end
-            if client.name == "ruff" then
-                client.server_capabilities.hoverProvider = false
-                client.server_capabilities.definitionProvider = false
-            end
-
             vim.api.nvim_clear_autocmds({ group = augroup_id, buffer = bufnr })
             vim.api.nvim_create_autocmd(
                 { "BufWritePre" },
@@ -106,8 +88,8 @@ return {
                     buffer = bufnr,
                     callback = function()
                         local result = { success = false }
-                        if filetype ~= "python" then
-                            result = lsp_format_modifications.format_modifications(client, bufnr)
+                        if client.server_capabilities.documentRangeFormattingProvider then
+                            result = lsp_format_modifications.format_modifications(client, bufnr, { async = true })
                         end
                         if not result.success then -- fall back to full-document formatting
                             vim.notify("formating using conform", vim.log.levels.DEBUG)
@@ -127,42 +109,17 @@ return {
             )
         end
 
-        mason_lspconfig.setup_handlers({
-            -- default handler for installed servers
-            function(server_name)
-                lspconfig[server_name].setup({
-                    capabilities = capabilities,
-                    on_attach = on_attach,
-                })
-            end,
-            ["clangd"] = function()
-                lspconfig["clangd"].setup({
-                    capabilities = capabilities,
-                    on_attach = on_attach,
-                    cmd = { 'clangd', '--background-index', '--clang-tidy', '--log=verbose' },
-                    init_options = {
-                        fallbackFlags = { '-std=c++17' },
-                    }
-                })
-            end,
-            ["lua_ls"] = function()
-                -- configure lua server (with special settings)
-                lspconfig["lua_ls"].setup({
-                    capabilities = capabilities,
-                    on_attach = on_attach,
-                    settings = {
-                        Lua = {
-                            -- make the language server recognize "vim" global
-                            diagnostics = {
-                                globals = { "vim" },
-                            },
-                            completion = {
-                                callSnippet = "Replace",
-                            },
-                        },
-                    },
-                })
-            end,
-        })
+        local lspconfig = require("lspconfig")
+        local servers = require("ved.config.servers")
+        local capabilities = require("cmp_nvim_lsp").default_capabilities()
+        capabilities.general = capabilities.general or {}
+        capabilities.general.positionEncodings = { "utf-16" } --  Force all clients to use UTF-16
+
+        for name, opts in pairs(servers) do
+            lspconfig[name].setup(vim.tbl_deep_extend("force", {
+                on_attach = on_attach,
+                capabilities = capabilities
+            }, opts))
+        end
     end,
 }

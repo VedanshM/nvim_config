@@ -1,0 +1,26 @@
+diff --git a/lua/lsp-format-modifications/init.lua b/lua/lsp-format-modifications/init.lua
+index 7a0436c..609aa87 100644
+--- a/lua/lsp-format-modifications/init.lua
++++ b/lua/lsp-format-modifications/init.lua
+@@ -31,7 +31,8 @@ local base_config = {
+   format_on_save = false,
+ 
+   -- the vcs being used
+-  vcs = "git",
++    vcs = "git",
++    async = false,
+ 
+   -- EXPERIMENTAL: when true, do not attempt formatting on the outermost empty
+   -- lines in diff hunks, and do not touch hunks consisting of entirely empty lines
+@@ -85,8 +86,9 @@ M.format_modifications = function(lsp_client, bufnr, config)
+     -- easiest case: the file is new, so skip the whole dance and format
+     -- everything
+     config.format_callback{
+-      id = lsp_client.id,
+-      bufnr = bufnr
++            id = lsp_client.id,
++            bufnr = bufnr,
++            async = config.async
+     }
+     return { success = true }
+   end

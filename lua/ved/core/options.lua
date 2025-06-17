@@ -63,8 +63,17 @@ autocmd_utils.nvim_create_augroups({
 }
 )
 
--- for ruff and pyright as suggested by gpt
 vim.diagnostic.config({
+-- Change the Diagnostic symbols in the sign column (gutter)
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = ' ',
+            [vim.diagnostic.severity.WARN] = ' ',
+            [vim.diagnostic.severity.INFO] = '󰠠 ',
+            [vim.diagnostic.severity.HINT] = ' ',
+        }
+    },
+-- for ruff and pyright as suggested by gpt
     virtual_text = true,
     signs = true,
     severity_sort = true,
